@@ -1,0 +1,69 @@
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+data = pd.read_csv('unemployment_in_india.csv')
+print("Dataset Preview:")
+print(data.head())
+print("\nMissing Values:")
+print(data.isnull().sum())
+data.fillna(data.mean(), inplace=True)
+if 'Date' in data.columns:
+    data['Date'] = pd.to_datetime(data['Date'])
+print("\nDataset Info:")
+print(data.info())
+if 'Date' in data.columns and 'Unemployment Rate (%)' in data.columns:
+    plt.figure(figsize=(12, 6))
+    plt.plot(data['Date'], data['Unemployment Rate (%)'], marker='o', color='blue')
+    plt.title('Unemployment Rate in India Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Unemployment Rate (%)')
+    plt.grid()
+    plt.show()
+if 'State' in data.columns and 'Unemployment Rate (%)' in data.columns:
+    plt.figure(figsize=(14, 7))
+    state_data = data.groupby('State')['Unemployment Rate (%)'].mean().sort_values()
+    state_data.plot(kind='bar', color='teal')
+    plt.title('Average Unemployment Rate by State')
+    plt.ylabel('Unemployment Rate (%)')
+    plt.xticks(rotation=45)
+    plt.grid(axis='y')
+    plt.show()
+plt.figure(figsize=(8, 6))
+sns.heatmap(data.corr(), annot=True, cmap='coolwarm', fmt=".2f")
+plt.title('Correlation Matrix')
+plt.show()
+plt.figure(figsize=(10, 6))
+sns.histplot(data['Unemployment Rate (%)'], kde=True, color='purple', bins=20)
+plt.title('Distribution of Unemployment Rates')
+plt.xlabel('Unemployment Rate (%)')
+plt.ylabel('Frequency')
+plt.show()
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+X = data.drop(columns=['Unemployment Rate (%)', 'Date', 'State'], errors='ignore') 
+y = data['Unemployment Rate (%)']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestRegressor(random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+print("\nModel Evaluation:")
+print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
+print("R-squared Score:", r2_score(y_test, y_pred))
+if X.columns.size > 0:
+    importances = pd.Series(model.feature_importances_, index=X.columns).sort_values(ascending=False)
+    plt.figure(figsize=(10, 6))
+    importances.plot(kind='bar', color='skyblue')
+    plt.title('Feature Importances')
+    plt.ylabel('Importance Score')
+    plt.show()
+data.to_csv('cleaned_unemployment_in_india.csv', index=False)
+print("\nCleaned data saved to 'cleaned_unemployment_in_india.csv'")
